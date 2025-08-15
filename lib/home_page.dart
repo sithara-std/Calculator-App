@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -22,6 +23,41 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
+            const SizedBox(
+              height: 30,
+            ),
+            IconButton(
+              onPressed: () async {
+                final SharedPreferences prefs = await SharedPreferences.getInstance();
+                //prefs.clear();
+                int count = prefs.getInt("count")!;
+                List<ListTile> calHistory = [];
+                for(int i=1; i<count; i++){
+                  print(prefs.getString("val_$i"));
+                  calHistory.add(
+                    ListTile(
+                      title: Text(
+                        "${prefs.getString("val_$i")}",
+                        style : const TextStyle(color: Colors.white),
+                        ),
+                        tileColor: Colors.green,
+                    ),
+                  );
+                }
+
+                showModalBottomSheet(
+                  context: context, 
+                  builder: (context) => Container(
+                    padding: const EdgeInsets.all(10),
+                    child: ListView(children: calHistory),          
+                    ),
+                );
+              },
+              icon: Icon(
+                Icons.history,
+                color: Colors.white,
+              ),
+            ),
             const SizedBox(
               height: 150,
             ),
@@ -94,7 +130,7 @@ class _HomePageState extends State<HomePage> {
   }
 
 void checkLogic({required String buttonName}){
-  setState(() {
+  setState((){
     if(buttonName == "C"){
       setState(() {
         displayValue = "";
@@ -110,6 +146,7 @@ void checkLogic({required String buttonName}){
          calculationValue.endsWith("-") ||
          calculationValue.endsWith("*") || 
          calculationValue.endsWith("/")) {
+
           //094253
       String operatorValue = calculationValue[calculationValue.length - 1];
       num firstValue =  num.parse(calculationValue.substring(0,calculationValue.length - 1));
@@ -133,6 +170,9 @@ void checkLogic({required String buttonName}){
         result = firstValue / secondValue ; 
         displayValue = result.toString();
       }
+
+      saveData();
+
      }
     }else if(buttonName == "*" ||
       buttonName == "/" || 
@@ -196,6 +236,22 @@ void checkLogic({required String buttonName}){
     }
   });
 }
+
+Future<void> saveData() async{
+  
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  int valueCount = 1;
+ 
+  if( prefs.containsKey("count")) {
+    valueCount = prefs.getInt("count")!;
+    prefs.setInt("count", valueCount + 1);
+  }else{
+    prefs.setInt("count", 1);
+  }
+  
+  prefs.setString("val_$valueCount", "$calculationValue $displayValue");
+}
+
   Padding calculatorButton(
     {required String buttonName,
     bool isEqualButton = false,
